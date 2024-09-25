@@ -45,8 +45,10 @@ const deployScript = async (): Promise<void> => {
   await deployContract({
     contract: "StakingContract",
     constructorArgs: {
-      reward_token_address: "0x1f8fa74e598eb8219ab48b3c32c1262d6f5b91d3e02f27c297c0a2943faeb2b",
-      staking_token_address: "0x1517debadc75048bcb95f2a85c580e701b85acbe6dc9a07db093993979f477b",
+      reward_token_address:
+        "0x1f8fa74e598eb8219ab48b3c32c1262d6f5b91d3e02f27c297c0a2943faeb2b",
+      staking_token_address:
+        "0x1517debadc75048bcb95f2a85c580e701b85acbe6dc9a07db093993979f477b",
     },
     options: {
       maxFee: BigInt(22000000000000000),
