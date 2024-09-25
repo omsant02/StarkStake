@@ -57,7 +57,7 @@ const { provider, deployer }: Network = networks[networkName];
 
 const declareIfNot_NotWait = async (
   payload: DeclareContractPayload,
-  options?: UniversalDetails
+  options?: UniversalDetails,
 ) => {
   const declareContractPayload = extractContractHashes(payload);
   try {
@@ -68,7 +68,7 @@ const declareIfNot_NotWait = async (
       const txVersion = await getTxVersion(
         networks[networkName],
         feeToken,
-        isSierraContract
+        isSierraContract,
       );
       const { transaction_hash } = await deployer.declare(payload, {
         ...options,
@@ -95,7 +95,7 @@ const deployContract_NotWait = async (payload: {
   try {
     const { calls, addresses } = transaction.buildUDCCall(
       payload,
-      deployer.address
+      deployer.address,
     );
     deployCalls.push(...calls);
     return {
@@ -128,7 +128,7 @@ const deployContract_NotWait = async (payload: {
  * });
  */
 const deployContract = async (
-  params: DeployContractParams
+  params: DeployContractParams,
 ): Promise<{
   classHash: string;
   address: string;
@@ -157,10 +157,10 @@ const deployContract = async (
         .readFileSync(
           path.resolve(
             __dirname,
-            `../contracts/target/dev/contracts_${contract}.compiled_contract_class.json`
-          )
+            `../contracts/target/dev/contracts_${contract}.compiled_contract_class.json`,
+          ),
         )
-        .toString("ascii")
+        .toString("ascii"),
     );
   } catch (error) {
     if (
@@ -169,13 +169,13 @@ const deployContract = async (
       error.message.includes("compiled_contract_class")
     ) {
       const match = error.message.match(
-        /\/dev\/(.+?)\.compiled_contract_class/
+        /\/dev\/(.+?)\.compiled_contract_class/,
       );
       const missingContract = match ? match[1].split("_").pop() : "Unknown";
       console.error(
         red(
-          `The contract "${missingContract}" doesn't exist or is not compiled`
-        )
+          `The contract "${missingContract}" doesn't exist or is not compiled`,
+        ),
       );
     } else {
       console.error(red("Error reading compiled contract class file: "), error);
@@ -192,10 +192,10 @@ const deployContract = async (
         .readFileSync(
           path.resolve(
             __dirname,
-            `../contracts/target/dev/contracts_${contract}.contract_class.json`
-          )
+            `../contracts/target/dev/contracts_${contract}.contract_class.json`,
+          ),
         )
-        .toString("ascii")
+        .toString("ascii"),
     );
   } catch (error) {
     console.error(red("Error reading contract class file: "), error);
@@ -216,7 +216,7 @@ const deployContract = async (
       contract: compiledContractSierra,
       casm: compiledContractCasm,
     },
-    options
+    options,
   );
 
   let randomSalt = stark.randomAddress();
@@ -247,8 +247,8 @@ const executeDeployCalls = async (options?: UniversalDetails) => {
   if (deployCalls.length < 1) {
     throw new Error(
       red(
-        "Aborted: No contract to deploy. Please prepare the contracts with `deployContract`"
-      )
+        "Aborted: No contract to deploy. Please prepare the contracts with `deployContract`",
+      ),
     );
   }
 
@@ -280,7 +280,7 @@ const executeDeployCalls = async (options?: UniversalDetails) => {
 const loadExistingDeployments = () => {
   const networkPath = path.resolve(
     __dirname,
-    `../deployments/${networkName}_latest.json`
+    `../deployments/${networkName}_latest.json`,
   );
   if (fs.existsSync(networkPath)) {
     return JSON.parse(fs.readFileSync(networkPath, "utf8"));
@@ -291,7 +291,7 @@ const loadExistingDeployments = () => {
 const exportDeployments = () => {
   const networkPath = path.resolve(
     __dirname,
-    `../deployments/${networkName}_latest.json`
+    `../deployments/${networkName}_latest.json`,
   );
 
   let finalDeployments = resetDeployments
@@ -302,7 +302,7 @@ const exportDeployments = () => {
     const currentTimestamp = new Date().getTime();
     fs.renameSync(
       networkPath,
-      networkPath.replace("_latest.json", `_${currentTimestamp}.json`)
+      networkPath.replace("_latest.json", `_${currentTimestamp}.json`),
     );
   }
 

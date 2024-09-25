@@ -19,7 +19,7 @@ const argv = yargs(process.argv.slice(2))
   .parseSync() as CommandLineOptions;
 
 // Set the NETWORK environment variable based on the --network argument
-process.env.NETWORK = argv.network || "devnet";
+process.env.NETWORK = argv.network || "sepolia";
 process.env.FEE_TOKEN = argv.fee || "eth";
 // Set the RESET environment variable based on the --reset flag
 
@@ -33,5 +33,5 @@ execSync(
     (argv.reset ? " --reset" : "") +
     " && ts-node ../scripts-ts/helpers/parse-deployments.ts" +
     " && cd ..",
-  { stdio: "inherit" }
+  { stdio: "inherit" },
 );
