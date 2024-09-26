@@ -8,6 +8,12 @@ pub trait IStakingContract<TContractState> {
     fn withdraw(ref self: TContractState, amount: u256);
     fn get_rewards(self: @TContractState, account: ContractAddress) -> u256;
     fn claim_rewards(ref self: TContractState);
+    fn buy_stake_tokens(ref self: TContractState, amount: u256);
+    fn get_stake_token_balance(self: @TContractState, account: ContractAddress) -> u256;
+    fn get_staked_balance(self: @TContractState, account: ContractAddress) -> u256;
+    fn get_reward_token_balance(self: @TContractState, account: ContractAddress) -> u256;
+    fn set_token_price(ref self: TContractState, new_price: u256);
+    fn withdraw_eth(ref self: TContractState, amount: u256);
 }
 
 mod Errors {
@@ -18,6 +24,7 @@ mod Errors {
     pub const UNFINISHED_DURATION: felt252 = 'Reward duration not finished';
     pub const NOT_OWNER: felt252 = 'Caller is not the owner';
     pub const NOT_ENOUGH_BALANCE: felt252 = 'Balance too low';
+    pub const INSUFFICIENT_ETH: felt252 = 'Insufficient ETH sent';
 }
 
 #[starknet::contract]
@@ -40,15 +47,13 @@ pub mod StakingContract {
         pub duration: u256,
         pub current_reward_per_staked_token: u256,
         pub finish_at: u256,
-        // last time an operation (staking / withdrawal / rewards claimed) was registered
         pub last_updated_at: u256,
         pub last_user_reward_per_staked_token: Map::<ContractAddress, u256>,
         pub unclaimed_rewards: Map::<ContractAddress, u256>,
         pub total_distributed_rewards: u256,
-        // total amount of staked tokens
         pub total_supply: u256,
-        // amount of staked tokens per user
         pub balance_of: Map::<ContractAddress, u256>,
+        pub token_price: u256,
     }
 
     #[event]
@@ -57,6 +62,7 @@ pub mod StakingContract {
         Deposit: Deposit,
         Withdrawal: Withdrawal,
         RewardsFinished: RewardsFinished,
+        TokensPurchased: TokensPurchased,
     }
 
     #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
@@ -76,6 +82,12 @@ pub mod StakingContract {
         pub msg: felt252,
     }
 
+    #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
+    pub struct TokensPurchased {
+        pub user: ContractAddress,
+        pub amount: u256,
+    }
+
     #[constructor]
     fn constructor(
         ref self: ContractState,
@@ -84,8 +96,8 @@ pub mod StakingContract {
     ) {
         self.staking_token.write(IERC20Dispatcher { contract_address: staking_token_address });
         self.reward_token.write(IERC20Dispatcher { contract_address: reward_token_address });
-
         self.owner.write(get_caller_address());
+        self.token_price.write(1_u256);
     }
 
     #[abi(embed_v0)]
@@ -95,7 +107,6 @@ pub mod StakingContract {
 
             assert(duration > 0, super::Errors::NULL_DURATION);
 
-            // can only set duration if the previous duration has already finished
             assert(
                 self.finish_at.read() < get_block_timestamp().into(),
                 super::Errors::UNFINISHED_DURATION
@@ -128,13 +139,8 @@ pub mod StakingContract {
             );
 
             self.reward_rate.write(rate);
-
-            // even if the previous reward duration has not finished, we reset the finish_at
-            // variable
             self.finish_at.write(block_timestamp + self.duration.read());
             self.last_updated_at.write(block_timestamp);
-
-            // reset total distributed rewards
             self.total_distributed_rewards.write(0);
         }
 
@@ -157,7 +163,7 @@ pub mod StakingContract {
             let user = get_caller_address();
 
             assert(
-                self.staking_token.read().balance_of(user) >= amount,
+                self.balance_of.read(user) >= amount,
                 super::Errors::NOT_ENOUGH_BALANCE
             );
 
@@ -185,11 +191,43 @@ pub mod StakingContract {
                 self.reward_token.read().transfer(user, rewards);
             }
         }
+
+        fn buy_stake_tokens(ref self: ContractState, amount: u256) {
+            let caller = get_caller_address();
+            let price = (amount * self.token_price.read()) / 100000; // Convert to ETH
+            assert(starknet::get_tx_info().unbox().value >= price, super::Errors::INSUFFICIENT_ETH);
+            
+            self.staking_token.read().transfer(caller, amount);
+            self.emit(TokensPurchased { user: caller, amount });
+        }
+
+        fn get_stake_token_balance(self: @ContractState, account: ContractAddress) -> u256 {
+            self.staking_token.read().balance_of(account)
+        }
+
+        fn get_staked_balance(self: @ContractState, account: ContractAddress) -> u256 {
+            self.balance_of.read(account)
+        }
+
+        fn get_reward_token_balance(self: @ContractState, account: ContractAddress) -> u256 {
+            self.reward_token.read().balance_of(account)
+        }
+
+        fn set_token_price(ref self: ContractState, new_price: u256) {
+            self.only_owner();
+            // new_price is expected to be in ETH with 5 decimal places
+            // e.g., 1 = 0.00001 ETH, 2 = 0.00002 ETH, etc.
+            self.token_price.write(new_price);
+        }
+
+        fn withdraw_eth(ref self: ContractState, amount: u256) {
+            self.only_owner();
+            starknet::send_eth_to_address(self.owner.read(), amount);
+        }
     }
 
     #[generate_trait]
     impl PrivateFunctions of PrivateFunctionsTrait {
-        // call this function every time a user (including owner) performs a state-modifying action
         fn update_rewards(ref self: ContractState, account: ContractAddress) {
             self
                 .current_reward_per_staked_token
@@ -209,27 +247,20 @@ pub mod StakingContract {
         }
 
         fn distribute_user_rewards(ref self: ContractState, account: ContractAddress) {
-            // compute earned rewards since last update for the user `account`
             let user_rewards = self.get_rewards(account);
             self.unclaimed_rewards.write(account, user_rewards);
-
-            // track amount of total rewards distributed
             self
                 .total_distributed_rewards
                 .write(self.total_distributed_rewards.read() + user_rewards);
         }
 
         fn send_rewards_finished_event(ref self: ContractState) {
-            // check whether we should send a RewardsFinished event
             if self.last_updated_at.read() == self.finish_at.read() {
                 let total_rewards = self.reward_rate.read() * self.duration.read();
 
                 if total_rewards != 0 && self.total_distributed_rewards.read() == total_rewards {
-                    // owner should set up NEW rewards into the contract
                     self.emit(RewardsFinished { msg: 'Rewards all distributed' });
                 } else {
-                    // owner should set up rewards into the contract (or add duration by setting up
-                    // rewards)
                     self.emit(RewardsFinished { msg: 'Rewards not active yet' });
                 }
             }
@@ -272,6 +303,3 @@ pub mod StakingContract {
         }
     }
 }
-
-// 0x779dd0939609dfb1745baa414d006ee8db1623a49d8964f3b268bb4b44ab086
-

@@ -35,8 +35,8 @@ export const menuLinks: HeaderMenuLink[] = [
     icon: <BugAntIcon className="h-4 w-4" />,
   },
   {
-    label: "Configure Contracts",
-    href: "/configure",
+    label: "Freelance",
+    href: "/freelance",
     icon: <Cog8ToothIcon className="h-4 w-4" />,
   },
 ];

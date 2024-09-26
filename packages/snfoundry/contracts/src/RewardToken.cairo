@@ -5,15 +5,17 @@ mod RewardToken {
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
-    // ERC20 Mixin
     #[abi(embed_v0)]
-    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
+    #[abi(embed_v0)]
+    impl ERC20CamelOnlyImpl = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
+        decimals: u8
     }
 
     #[event]
@@ -24,18 +26,37 @@ mod RewardToken {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        initial_supply: u256,
-        recipient: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState) {
         let name = "RewardToken";
         let symbol = "RTK";
+        let initial_supply: u256 = 10000000_u256;
+        let recipient: ContractAddress = 0x079e8838aa3eb04d95f50b33a426d20eed2767dbaceb6f0a0e05aa84a9598426.try_into().unwrap();
+        let decimals: u8 = 0;
 
+        self._set_decimals(decimals);
         self.erc20.initializer(name, symbol);
         self.erc20.mint(recipient, initial_supply);
     }
+
+    #[abi(embed_v0)]
+    impl ERC20MetadataImpl of interface::IERC20Metadata<ContractState> {
+        fn name(self: @ContractState) -> felt252 {
+            self.erc20.name()
+        }
+
+        fn symbol(self: @ContractState) -> felt252 {
+            self.erc20.symbol()
+        }
+
+        fn decimals(self: @ContractState) -> u8 {
+            self.decimals.read()
+        }
+    }
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn _set_decimals(ref self: ContractState, decimals: u8) {
+            self.decimals.write(decimals);
+        }
+    }
 }
-
-// 0x1f8fa74e598eb8219ab48b3c32c1262d6f5b91d3e02f27c297c0a2943faeb2b
-
