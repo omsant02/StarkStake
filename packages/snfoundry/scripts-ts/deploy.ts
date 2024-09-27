@@ -49,8 +49,8 @@ const deployScript = async (): Promise<void> => {
     //   recipient: "0x079e8838aa3eb04d95f50b33a426d20eed2767dbaceb6f0a0e05aa84a9598426",
     // },
     constructorArgs: {
-      staking_token_address: "0x79b2d1ebac9e491de5bb86b718a360f23a83503515d5284f9261effb59ecb71",
-      reward_token_address: "0x16f37848f0958fd63e4bae0ebeab2edd334b84fdb132c5be1dc4f90032fd808",
+      staking_token_address: "0x3f4665f7e369ddaad22bdd82695c496f534a1d9a1f32635e22609b093cc85b1",
+      reward_token_address: "0x1d8d131f87387c45ca82f95e467e25b9b2b7614afcb92af5d58765c02449083",
       owner_address:"0x079e8838aa3eb04d95f50b33a426d20eed2767dbaceb6f0a0e05aa84a9598426",
     },
     options: {
