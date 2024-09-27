@@ -37,5 +37,5 @@ mod RewardToken {
     }
 }
 
-// 0x1f8fa74e598eb8219ab48b3c32c1262d6f5b91d3e02f27c297c0a2943faeb2b
+// 0x16f37848f0958fd63e4bae0ebeab2edd334b84fdb132c5be1dc4f90032fd808
 

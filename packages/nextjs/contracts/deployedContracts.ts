@@ -7,7 +7,7 @@ const deployedContracts = {
   sepolia: {
     RewardToken: {
       address:
-        "0x1f8fa74e598eb8219ab48b3c32c1262d6f5b91d3e02f27c297c0a2943faeb2b",
+        "0x16f37848f0958fd63e4bae0ebeab2edd334b84fdb132c5be1dc4f90032fd808",
       abi: [
         {
           type: "impl",
@@ -354,7 +354,7 @@ const deployedContracts = {
     },
     StakeToken: {
       address:
-        "0x1517debadc75048bcb95f2a85c580e701b85acbe6dc9a07db093993979f477b",
+        "0x79b2d1ebac9e491de5bb86b718a360f23a83503515d5284f9261effb59ecb71",
       abi: [
         {
           type: "impl",
@@ -701,7 +701,7 @@ const deployedContracts = {
     },
     StakingContract: {
       address:
-        "0x779dd0939609dfb1745baa414d006ee8db1623a49d8964f3b268bb4b44ab086",
+        "0x5918dba83355a3b4260519af8fbfe482d47ae59efd4df1ffe2266a9e31d09aa",
       abi: [
         {
           type: "impl",
@@ -811,6 +811,10 @@ const deployedContracts = {
               name: "reward_token_address",
               type: "core::starknet::contract_address::ContractAddress",
             },
+            {
+              name: "owner_address",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
           ],
         },
         {
@@ -883,7 +887,7 @@ const deployedContracts = {
         },
       ],
       classHash:
-        "0x695aa4012ed4060bce5b15a9292d4b9b398040b6555197a5c78e55ca61e88ab",
+        "0x3fcbad29696b3397ed6bba00ef5250ddbff21b522d6dee8e7e52b4457fbed3e",
     },
   },
 } as const;
