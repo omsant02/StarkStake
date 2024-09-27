@@ -81,11 +81,12 @@ pub mod StakingContract {
         ref self: ContractState,
         staking_token_address: ContractAddress,
         reward_token_address: ContractAddress,
+        owner_address: ContractAddress,
     ) {
         self.staking_token.write(IERC20Dispatcher { contract_address: staking_token_address });
         self.reward_token.write(IERC20Dispatcher { contract_address: reward_token_address });
 
-        self.owner.write(get_caller_address());
+        self.owner.write(owner_address);
     }
 
     #[abi(embed_v0)]
